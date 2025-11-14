@@ -1,0 +1,32 @@
+{
+  "name": "opticloud-frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "catalogo",
+    "paciente"
+  ],
+    "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:paciente": "npm run dev --workspace=paciente",
+    "build:paciente": "npm run build --workspace=paciente",
+    "preview:paciente": "npm run preview --workspace=paciente",
+    "dev:catalogo": "npm run dev --workspace=catalogo",
+    "build:catalogo": "npm run build --workspace=catalogo",
+    "preview:catalogo": "npm run preview --workspace=catalogo"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/element12/OptiCloud-Frontend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/element12/OptiCloud-Frontend/issues"
+  },
+  "homepage": "https://github.com/element12/OptiCloud-Frontend#readme"
+}
