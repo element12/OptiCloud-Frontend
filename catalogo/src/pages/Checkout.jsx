@@ -17,12 +17,12 @@ const CheckOut = () => {
   const cartTotal = useSelector((state) => state.cartState.cartTotal);
 
   if (cartTotal === 0) {
-    return <SectionTitle text="Your cart is empty" />;
+    return <SectionTitle text="Tu carrito está vacío" />;
   }
 
   return (
     <>
-      <SectionTitle text="place your order" />
+      <SectionTitle text="realiza tu pedido" />
       <div className="mt-8 grid gap-8 md:grid-cols-2 items-start">
         <CheckoutForm />
         <CartTotals />
