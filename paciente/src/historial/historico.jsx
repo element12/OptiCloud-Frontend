@@ -10,6 +10,8 @@ function Modal({ isOpen, onClose, title, children }) {
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") onClose();
+      
+      
     }
     if (isOpen) document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
