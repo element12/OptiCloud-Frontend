@@ -80,24 +80,25 @@ function Dashboard() {
 
 
   return (
-    
-    <div className="container py-5">
-      <h2>Bienvenido al Dashboard</h2>
-      <h4 className="mt-4">Datos de usuario: </h4>
-      <pre>{JSON.stringify(usuario, null, 2)}</pre>
+    <>
+      <div className="container py-5">
+        <h2>Bienvenido al Dashboard</h2>
+        <h4 className="mt-4">Datos de usuario: </h4>
+        <pre>{JSON.stringify(usuario, null, 2)}</pre>
 
-      <h4 className="mt-4">Estado del API de Historial Optométrico:</h4>
-      <pre>{JSON.stringify(historialOptometrico, null, 2)}</pre>
-      <h4 className="mt-4">Estado del API de Catálogo Inventario:</h4>
-      <pre>{JSON.stringify(catalogoInventario, null, 2)}</pre>
-      <h4 className="mt-4">Estado del API de Gestión Paciente:</h4>
-      <pre>{JSON.stringify(gestionPaciente, null, 2)}</pre>
-      <h4 className="mt-4">Estado del API de Usuarios:</h4>
-      <pre>{JSON.stringify(usuarios, null, 2)}</pre>
-      <button className="btn btn-danger mt-3" onClick={handleLogout}>
-        Cerrar sesión
-      </button>
-    </div>
+        <h4 className="mt-4">Estado del API de Historial Optométrico:</h4>
+        <pre>{JSON.stringify(historialOptometrico, null, 2)}</pre>
+        <h4 className="mt-4">Estado del API de Catálogo Inventario:</h4>
+        <pre>{JSON.stringify(catalogoInventario, null, 2)}</pre>
+        <h4 className="mt-4">Estado del API de Gestión Paciente:</h4>
+        <pre>{JSON.stringify(gestionPaciente, null, 2)}</pre>
+        <h4 className="mt-4">Estado del API de Usuarios:</h4>
+        <pre>{JSON.stringify(usuarios, null, 2)}</pre>
+        <button className="btn btn-danger mt-3" onClick={handleLogout}>
+          Cerrar sesión
+        </button>
+      </div>
+    </>
   );
 }
 

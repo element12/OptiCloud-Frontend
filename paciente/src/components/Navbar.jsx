@@ -23,9 +23,9 @@ function Header() {
             <nav>
                 <ul style={styles.navList}>
                     <li><Link to="/" style={styles.link}>Inicio</Link></li>
-                    <li><Link to="/about" style={styles.link}>Catalogo</Link></li>
-                    <li><Link to="/services" style={styles.link}>Pacientes</Link></li>
-                    <li><Link to="/contact" style={styles.link}>Usuarios</Link></li>
+                    <li><Link to="http://localhost:5174" style={styles.link}>Catalogo</Link></li>
+                    <li><Link to="/optometrico" style={styles.link}>Optométria</Link></li>
+                    <li><Link to="/usuarios" style={styles.link}>Pacientes</Link></li>
                     <li><button onClick={handleLogout} style={styles.link_button}>Cerrar sesión</button></li>
                 </ul>
             </nav>
