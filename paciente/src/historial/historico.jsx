@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import "../components/opticloud.css";
+import { FaEdit } from "react-icons/fa";
+import "../components/opticloud.css"; // ajústala si tu CSS está en otra ruta
 
 // 🌍 VARIABLE GLOBAL DE API
 const API_URL = "http://localhost:3003";
@@ -52,17 +53,19 @@ function Toast({ toast, onClose }) {
   );
 }
 
-/* ------------------ Main screen component ------------------ */
+/* ------------------ Main screen component (unificado) ------------------ */
 export default function OpticloudCrearExamen() {
-  // modal state
+  // modal state (open for create or edit)
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingExamId, setEditingExamId] = useState(null);
 
-  // patients
+  // patients (for create mode)
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [patientsError, setPatientsError] = useState(null);
 
-  // form state
+  // form state (used for both create and edit)
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const [selectedPatient, setSelectedPatient] = useState(null);
 
@@ -74,50 +77,77 @@ export default function OpticloudCrearExamen() {
     oi_cylinder: "",
     oi_axis: "",
     observations: "",
+    edit_reason: "", // motivo para edición (se enviará como `modification`)
   });
 
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
-  /* ------------------ GET Patients ------------------ */
+  // exams table
+  const [exams, setExams] = useState([]);
+  const [loadingExams, setLoadingExams] = useState(true);
+  const [errorExams, setErrorExams] = useState(null);
+
+  /* ------------------ Fetch exams (tabla) ------------------ */
+  async function fetchExams() {
+    try {
+      setLoadingExams(true);
+      setErrorExams(null);
+      const res = await fetch(`${API_URL}/optometrico/v1/exams`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setExams(Array.isArray(data) ? data : [data]);
+    } catch (err) {
+      console.error("fetchExams error:", err);
+      setErrorExams("Error al cargar los exámenes.");
+    } finally {
+      setLoadingExams(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchExams();
+  }, []);
+
+  /* ------------------ Fetch patients when opening modal (create or edit) ------------------ */
   useEffect(() => {
     if (!isOpen) return;
     let mounted = true;
-
     async function fetchPatients() {
       setPatientsLoading(true);
       setPatientsError(null);
       try {
         const res = await fetch(`${API_URL}/optometrico/v1/patients`);
-        if (!res.ok) throw new Error(`Error ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (mounted) setPatients(data instanceof Array ? data : [data]);
+        if (mounted) setPatients(Array.isArray(data) ? data : [data]);
       } catch (err) {
+        console.error("fetchPatients error:", err);
         if (mounted) setPatientsError("No se pudieron cargar los pacientes.");
       } finally {
         if (mounted) setPatientsLoading(false);
       }
     }
-
     fetchPatients();
     return () => (mounted = false);
   }, [isOpen]);
 
-  /* ------------------ Auto-fill patient info ------------------ */
+  /* ------------------ Auto-fill patient info when selectedPatientId changes ------------------ */
   useEffect(() => {
     const p = patients.find((x) => String(x.id) === String(selectedPatientId));
     setSelectedPatient(p || null);
-
     setErrors((prev) => {
-      const clone = { ...prev };
-      delete clone.patient_id;
-      return clone;
+      const c = { ...prev };
+      delete c.patient_id;
+      return c;
     });
   }, [selectedPatientId, patients]);
 
-  /* ------------------ Helpers ------------------ */
-  function handleOpen() {
+  /* ------------------ Open create modal ------------------ */
+  function openCreateModal() {
+    setIsEditMode(false);
+    setEditingExamId(null);
     setIsOpen(true);
     setForm({
       od_sphere: "",
@@ -127,15 +157,45 @@ export default function OpticloudCrearExamen() {
       oi_cylinder: "",
       oi_axis: "",
       observations: "",
+      edit_reason: "", // inicializo para evitar residuos
     });
     setSelectedPatientId("");
     setSelectedPatient(null);
     setErrors({});
   }
 
+  /* ------------------ Open edit modal with exam data ------------------ */
+  async function openEditModal(exam) {
+    // exam is the object from table
+    setIsEditMode(true);
+    setEditingExamId(exam.id);
+    // patient must be readonly in edit mode, set selectedPatientId and selectedPatient
+    setSelectedPatientId(exam.patient_id ?? ""); // si el backend lo provee
+    setSelectedPatient({
+      id: exam.patient_id ?? null,
+      name: exam.patient_name,
+      document: exam.patient_document,
+    });
+    // fill form with exam values (strings -> keep same format)
+    setForm({
+      od_sphere: String(exam.od_sphere ?? ""),
+      od_cylinder: String(exam.od_cylinder ?? ""),
+      od_axis: String(exam.od_axis ?? ""),
+      oi_sphere: String(exam.oi_sphere ?? ""),
+      oi_cylinder: String(exam.oi_cylinder ?? ""),
+      oi_axis: String(exam.oi_axis ?? ""),
+      observations: exam.observations ?? "",
+      edit_reason:  exam.modification ?? "", // obligatorio: el usuario debe completar el motivo en edición
+    });
+    setErrors({});
+    setIsOpen(true);
+  }
+
   function handleClose() {
     if (isSaving) return;
     setIsOpen(false);
+    setIsEditMode(false);
+    setEditingExamId(null);
   }
 
   function handleChange(e) {
@@ -148,44 +208,59 @@ export default function OpticloudCrearExamen() {
     });
   }
 
-  /* ------------------ VALIDATIONS ------------------ */
+  /* ------------------ Validations (same for create & edit) ------------------ */
   function validateAll() {
     const errs = {};
 
     if (!selectedPatientId) {
       errs.patient_id = "Seleccione un paciente.";
-    } else if (!patients.some((p) => String(p.id) === String(selectedPatientId))) {
+    } else if (!isEditMode && !patients.some((p) => String(p.id) === String(selectedPatientId))) {
+      // en modo creación asegurar que paciente exista
       errs.patient_id = "Paciente inválido.";
     }
 
     const floatFields = ["od_sphere", "od_cylinder", "oi_sphere", "oi_cylinder"];
     floatFields.forEach((f) => {
-      const v = String(form[f]).trim();
-      if (!v) errs[f] = "Campo requerido.";
-      else if (!/^[-+]?\d+(\.\d+)?$/.test(v))
+      const v = String(form[f] ?? "").trim();
+      if (!v) {
+        errs[f] = "Campo requerido.";
+      } else if (!/^[-+]?\d+(\.\d+)?$/.test(v)) {
         errs[f] = "Debe ser número válido (negativos y decimales).";
+      }
     });
 
     const axisFields = ["od_axis", "oi_axis"];
     axisFields.forEach((a) => {
-      const v = String(form[a]).trim();
-      if (!v) errs[a] = "Campo requerido.";
-      else if (!/^\d+$/.test(v)) errs[a] = "Debe ser un entero.";
-      else {
+      const v = String(form[a] ?? "").trim();
+      if (!v) {
+        errs[a] = "Campo requerido.";
+      } else if (!/^\d+$/.test(v)) {
+        errs[a] = "Debe ser un número entero.";
+      } else {
         const num = parseInt(v, 10);
-        if (num < 1 || num > 180) errs[a] = "Eje debe estar entre 1 y 180.";
+        if (num < 1 || num > 180) {
+          errs[a] = "Eje debe estar entre 1 y 180.";
+        }
       }
     });
 
-    const obs = String(form.observations || "").trim();
-    if (obs && obs.length < 10)
-      errs.observations = "Debe tener al menos 10 caracteres.";
+    const obs = String(form.observations ?? "").trim();
+    if (obs && obs.length < 10) {
+      errs.observations = "Si escribe observaciones, debe tener al menos 10 caracteres.";
+    }
+
+    // motivo obligatorio SÓLO en edición
+    if (isEditMode) {
+      if (!String(form.edit_reason ?? "").trim()) {
+        errs.edit_reason = "Motivo es requerido para la edición.";
+      }
+    }
 
     setErrors(errs);
     return errs;
   }
 
-  /* ------------------ POST Submit ------------------ */
+  /* ------------------ Submit (POST or PUT según modo) ------------------ */
   async function handleSubmit(e) {
     e.preventDefault();
     if (isSaving) return;
@@ -196,7 +271,7 @@ export default function OpticloudCrearExamen() {
       return;
     }
 
-    const body = {
+    const payload = {
       patient_id: Number(selectedPatientId),
       od_sphere: parseFloat(form.od_sphere),
       od_cylinder: parseFloat(form.od_cylinder),
@@ -204,56 +279,142 @@ export default function OpticloudCrearExamen() {
       oi_sphere: parseFloat(form.oi_sphere),
       oi_cylinder: parseFloat(form.oi_cylinder),
       oi_axis: parseInt(form.oi_axis, 10),
-      observations: form.observations.trim(),
-      exam_datetime: new Date().toISOString(),
+      observations: form.observations ? form.observations.trim() : "",
     };
 
     try {
       setIsSaving(true);
 
-      const res = await fetch(`${API_URL}/optometrico/v1/exams`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      let res;
+      if (isEditMode && editingExamId) {
+        // **IMPORTANTE**: enviar 'modification' porque tu backend lo espera
+        payload.modification = form.edit_reason?.trim() || "";
 
-      if (!res.ok) throw new Error(await res.text());
+        // log para verificar lo que se envía al backend (útil para debugging)
+        console.log("PUT payload:", payload);
 
-      setToast({ id: Date.now(), type: "success", message: "Examen registrado correctamente." });
+        // PUT update
+        res = await fetch(`${API_URL}/optometrico/v1/exams/${editingExamId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // POST create (add exam_datetime automatically)
+        payload.exam_datetime = new Date().toISOString();
+        res = await fetch(`${API_URL}/optometrico/v1/exams`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
+
+      if (isEditMode) {
+        setToast({ id: Date.now(), type: "success", message: "Examen actualizado correctamente." });
+      } else {
+        setToast({ id: Date.now(), type: "success", message: "Examen registrado correctamente." });
+      }
+
       setIsOpen(false);
+      setIsEditMode(false);
+      setEditingExamId(null);
+      // refrescar tabla
+      await fetchExams();
     } catch (err) {
-      console.error(err);
+      console.error("submit error:", err);
       setToast({
         id: Date.now(),
         type: "error",
-        message: "No se pudo guardar el examen. Intente nuevamente.",
+        message: isEditMode ? "No se pudo actualizar el examen." : "No se pudo guardar el examen.",
       });
     } finally {
       setIsSaving(false);
     }
   }
 
-  /* ------------------ RENDER ------------------ */
+  /* ------------------ Render ------------------ */
   return (
     <div className="oc-page">
       <header className="oc-header">
         <h1>Órdenes Ópticas</h1>
-        <button className="oc-btn-primary" onClick={handleOpen}>
+        <button className="oc-btn-primary" onClick={openCreateModal}>
           Crear Orden Óptica
         </button>
       </header>
 
-      <main className="oc-main">
-        <div className="oc-card">
-          <h2>Registrar Examen Optométrico</h2>
-          <p className="muted">Cree una orden rápida para un examen con prescripción.</p>
-          <div className="oc-placeholder">
-            <p>Click en "Crear Orden Óptica" para abrir el formulario.</p>
-          </div>
-        </div>
-      </main>
+      <p className="muted">Click en 'Crear Orden Óptica' para abrir el formulario.</p>
 
-      <Modal isOpen={isOpen} onClose={handleClose} title="Crear Orden Óptica — Registrar Examen">
+      {/* Tabla de exámenes */}
+      {loadingExams ? (
+        <p>Cargando exámenes...</p>
+      ) : errorExams ? (
+        <p className="oc-error-text">{errorExams}</p>
+      ) : (
+        <div className="oc-table-wrapper">
+          <table className="oc-table">
+            <thead>
+              <tr>
+                <th>Documento</th>
+                <th>Nombre</th>
+                <th>OD Esfera</th>
+                <th>OD Cil.</th>
+                <th>OD Eje</th>
+                <th>OI Esfera</th>
+                <th>OI Cil.</th>
+                <th>OI Eje</th>
+                <th>Observaciones</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exams.map((ex) => (
+                <tr key={ex.id}>
+                  <td>{ex.patient_document}</td>
+                  <td>{ex.patient_name}</td>
+                  <td>{ex.od_sphere}</td>
+                  <td>{ex.od_cylinder}</td>
+                  <td>{ex.od_axis}</td>
+                  <td>{ex.oi_sphere}</td>
+                  <td>{ex.oi_cylinder}</td>
+                  <td>{ex.oi_axis}</td>
+                  <td>{ex.observations}</td>
+                  <td>
+                    <button
+                      className="oc-btn-edit"
+                      onClick={() => {
+                        // fill with exam data and open edit modal
+                        // note: ensure your exam rows include patient_id (if not, backend should include it)
+                        openEditModal(ex);
+                      }}
+                    >
+                      <FaEdit /> Editar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {exams.length === 0 && (
+                <tr>
+                  <td colSpan={10} style={{ textAlign: "center", padding: "18px" }}>
+                    No hay exámenes registrados.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal - create / edit (reused) */}
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title={isEditMode ? "Editar Examen" : "Crear Orden Óptica — Registrar Examen"}
+      >
         <form className="oc-form" onSubmit={handleSubmit} noValidate>
           {/* Paciente */}
           <div className="oc-row">
@@ -263,10 +424,12 @@ export default function OpticloudCrearExamen() {
             ) : patientsError ? (
               <div className="oc-error-text">{patientsError}</div>
             ) : (
+              // If editing, keep select disabled and show selectedPatient only (patient cannot be changed)
               <select
                 className={`oc-select ${errors.patient_id ? "oc-input-error" : ""}`}
                 value={selectedPatientId}
                 onChange={(e) => setSelectedPatientId(e.target.value)}
+                disabled={isEditMode}
               >
                 <option value="">-- Seleccione paciente --</option>
                 {patients.map((p) => (
@@ -302,6 +465,7 @@ export default function OpticloudCrearExamen() {
                   value={form.od_sphere}
                   onChange={handleChange}
                   className={`oc-input ${errors.od_sphere ? "oc-input-error" : ""}`}
+                  placeholder="-1.25"
                 />
                 {errors.od_sphere && <div className="oc-field-error">{errors.od_sphere}</div>}
               </div>
@@ -313,6 +477,7 @@ export default function OpticloudCrearExamen() {
                   value={form.od_cylinder}
                   onChange={handleChange}
                   className={`oc-input ${errors.od_cylinder ? "oc-input-error" : ""}`}
+                  placeholder="-0.50"
                 />
                 {errors.od_cylinder && <div className="oc-field-error">{errors.od_cylinder}</div>}
               </div>
@@ -324,6 +489,7 @@ export default function OpticloudCrearExamen() {
                   value={form.od_axis}
                   onChange={handleChange}
                   className={`oc-input ${errors.od_axis ? "oc-input-error" : ""}`}
+                  placeholder="90"
                 />
                 {errors.od_axis && <div className="oc-field-error">{errors.od_axis}</div>}
               </div>
@@ -341,6 +507,7 @@ export default function OpticloudCrearExamen() {
                   value={form.oi_sphere}
                   onChange={handleChange}
                   className={`oc-input ${errors.oi_sphere ? "oc-input-error" : ""}`}
+                  placeholder="-0.75"
                 />
                 {errors.oi_sphere && <div className="oc-field-error">{errors.oi_sphere}</div>}
               </div>
@@ -352,6 +519,7 @@ export default function OpticloudCrearExamen() {
                   value={form.oi_cylinder}
                   onChange={handleChange}
                   className={`oc-input ${errors.oi_cylinder ? "oc-input-error" : ""}`}
+                  placeholder="-0.25"
                 />
                 {errors.oi_cylinder && <div className="oc-field-error">{errors.oi_cylinder}</div>}
               </div>
@@ -363,13 +531,14 @@ export default function OpticloudCrearExamen() {
                   value={form.oi_axis}
                   onChange={handleChange}
                   className={`oc-input ${errors.oi_axis ? "oc-input-error" : ""}`}
+                  placeholder="85"
                 />
                 {errors.oi_axis && <div className="oc-field-error">{errors.oi_axis}</div>}
               </div>
             </div>
           </fieldset>
 
-          {/* Observaciones */}
+          {/* Observaciones (opcional) */}
           <div className="oc-row">
             <label className="oc-label">Observaciones (opcional)</label>
             <textarea
@@ -378,23 +547,39 @@ export default function OpticloudCrearExamen() {
               onChange={handleChange}
               className={`oc-textarea ${errors.observations ? "oc-input-error" : ""}`}
               rows={3}
+              placeholder="Observaciones clínicas, detalles…"
             />
             {errors.observations && <div className="oc-field-error">{errors.observations}</div>}
           </div>
 
+            {isEditMode && (
+            <div className="oc-row">
+                <label className="oc-label">Motivo de modificación de fórmula</label>
+                <textarea
+                name="edit_reason"
+                value={form.edit_reason}
+                onChange={handleChange}
+                className={`oc-textarea ${errors.edit_reason ? "oc-input-error" : ""}`}
+                rows={3}
+                placeholder="Explique la razón del ajuste en la fórmula…"
+                required
+                />
+                {errors.edit_reason && <div className="oc-field-error">{errors.edit_reason}</div>}
+            </div>
+            )}
           {/* Buttons */}
           <div className="oc-actions">
             <button type="button" className="oc-btn-secondary" onClick={handleClose} disabled={isSaving}>
               Cancelar
             </button>
             <button type="submit" className="oc-btn-primary" disabled={isSaving}>
-              {isSaving ? "Guardando..." : "Guardar"}
+              {isSaving ? (isEditMode ? "Guardando..." : "Guardando...") : isEditMode ? "Guardar Cambios" : "Guardar"}
             </button>
           </div>
         </form>
       </Modal>
 
-      <div className="oc-toast-wrapper">
+      <div className="oc-toast-wrapper" aria-live="polite">
         <Toast toast={toast} onClose={() => setToast(null)} />
       </div>
     </div>
