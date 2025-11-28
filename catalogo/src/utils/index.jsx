@@ -1,10 +1,19 @@
 import axios from "axios";
 
-const productionUrl = "https://strapi-store-server.onrender.com/api";
-const developmentUrl = "http://localhost:3002/api/v1";
+const developmentUrl = "https://apigateway-opticloud.azure-api.net";
+//const developmentUrl = "/api";
 export const customFetch = axios.create({
   baseURL: developmentUrl,
 });
+
+customFetch.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export const formatPrice = (price) => {
   const pesosCantidad = new Intl.NumberFormat("es-CO", {

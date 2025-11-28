@@ -8,12 +8,12 @@ export const action = async ({ request }) => {
   const data = Object.fromEntries(formData);
 
   try {
-    const response = await customFetch.post("/auth/local/register", data);
-    toast.success("account created successfully");
+    const response = await customFetch.post("/users/register", data);
+    toast.success("Cuenta creada correctamente, por favor ingresa");
     return redirect("/login");
   } catch (err) {
     const errorMessage =
-      err?.response?.data?.error.message || "please double check credentails";
+      err?.response?.data?.error.message || "por favor verifica tus credenciales e intenta de nuevo";
     toast.error(errorMessage);
   }
 
@@ -26,12 +26,18 @@ const Register = () => {
       <Form
         method="POST"
         className="card w-75 sm:w-96 p-8 bg-base-100 shadow-lg flex flex-col gap-y-4">
-        <h4 className="text-center text-3xl font-bold">Register</h4>
+        <h4 className="text-center text-3xl font-bold">Registrarse</h4>
         <FormInput
           type="text"
-          label="username"
-          name="username"
+          label="Nombre completo"
+          name="name"
           defaultValue="shahid1"
+        />
+        <FormInput
+          type="number"
+          label="Numero de documento"
+          name="document"
+          defaultValue="123456789"
         />
         <FormInput
           type="email"
@@ -49,11 +55,11 @@ const Register = () => {
           <SubmitBtn text="register" />
         </div>
         <p className="text-center">
-          Already a member ?{" "}
+          Ya tienes cuenta?{""}
           <Link
             to="/login"
             className="ml-2 link link-hover link-primary capitalize">
-            login
+            Ingresar
           </Link>
         </p>
       </Form>

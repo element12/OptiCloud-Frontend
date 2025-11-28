@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import "../components/opticloud-products.css";
 
-const API_URL = "http://localhost:3002";
+const API_URL = "https://apigateway-opticloud.azure-api.net/catalogo";
 
 /* ------------------ Modal reusable ------------------ */
 function Modal({ isOpen, onClose, title, children }) {
