@@ -6,13 +6,13 @@ import HistorialOpt from "./historial/historico";
 import Patients from "./pacientes/paciente";
 import HomeLayout from "./dashboard/HomeLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import Usuarios from "./historial/usuarios";
+  
 
 function App() {
   return (
     <Router>
       <Routes>
-
-
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -24,9 +24,9 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="optometrico" element={<HistorialOpt />} />
             <Route path="pacientes" element={<Patients />} />
+            <Route path="usuarios" element={<Usuarios />} />
           </Route>
         </Route>
-
       </Routes>
     </Router>
   );
