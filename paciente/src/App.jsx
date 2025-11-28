@@ -7,7 +7,7 @@ import Patients from "./pacientes/paciente";
 import HomeLayout from "./dashboard/HomeLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import Usuarios from "./historial/usuarios";
-  
+import NoIngreso from "./components/NoIngreso";
 
 function App() {
   return (
@@ -16,14 +16,20 @@ function App() {
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/unauthorized" element={<NoIngreso />} />
 
         {/* Rutas protegidas */}
-        <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute allowedRoles={["Administrador","Optometrista"]}  />}>
           <Route element={<HomeLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="optometrico" element={<HistorialOpt />} />
             <Route path="pacientes" element={<Patients />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={["Administrador"]}  />}>
+          <Route element={<HomeLayout />}>
             <Route path="usuarios" element={<Usuarios />} />
           </Route>
         </Route>

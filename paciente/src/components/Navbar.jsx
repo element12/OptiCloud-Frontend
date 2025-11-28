@@ -1,4 +1,5 @@
 import React from "react";
+import { jwtDecode } from "jwt-decode";
 import { Link, useNavigate } from "react-router-dom";
 
 function Header() {
@@ -9,6 +10,21 @@ function Header() {
         localStorage.removeItem("isLogged");
         navigate("/login", { replace: true });
     };
+
+    const token = localStorage.getItem("token");
+
+    let userRoles = [];
+
+    if (token) {
+        try {
+            const decoded = jwtDecode(token);
+            userRoles = decoded.roles || [];
+        } catch (error) {
+            console.error("Token inválido:", error);
+        }
+    }
+    const hasRole = (role) => userRoles.includes(role);
+
 
     return (
         <>
@@ -26,7 +42,9 @@ function Header() {
                         <li><Link to="https://catalagopticloud.azurewebsites.net" style={styles.link}>Catálogo</Link></li>
                         <li><Link to="/optometrico" style={styles.link}>Optometría</Link></li>
                         <li><Link to="/pacientes" style={styles.link}>Pacientes</Link></li>
-                        <li><Link to="/usuarios" style={styles.link}>Usuarios</Link></li>
+                         {hasRole("Administrador") && (
+                            <li><Link to="/usuarios" style={styles.link}>Usuarios</Link></li>
+                        )}
                         <li>
                             <button onClick={handleLogout} style={styles.linkButton}>
                                 Cerrar sesión
