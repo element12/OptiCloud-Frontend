@@ -12,16 +12,18 @@ export const action =
     const data = Object.fromEntries(formData);
 
     try {
-      const response = await customFetch.post("/auth/local", data);
+      const response = await customFetch.post("/login", data);
+      console.log(response);
       store.dispatch(loginUser(response.data));
-      toast.success("logged in successfully");
+      toast.success("Ingresaste correctamente");
       return redirect("/");
       // return null
     } catch (e) {
       const errorMessage =
         e?.response?.data?.error?.message ||
-        "please double check your credentials";
+        "Por favor verifica tus credenciales e intenta de nuevo";
       toast.error(errorMessage);
+      console.error(errorMessage);
       return null;
     }
   };
@@ -41,7 +43,7 @@ const Login = () => {
       navigate("/");
     } catch (error) {
       console.log(error);
-      toast.error("guest user login error, please try again");
+      toast.error("Error al iniciar sesión como usuario invitado, por favor intenta de nuevo");
     }
   };
 
@@ -50,24 +52,18 @@ const Login = () => {
       <Form
         method="POST"
         className="card w-75 sm:w-96 p-8 bg-base-100 shadow-lg flex flex-col gap-y-4">
-        <h4 className="text-center text-3xl font-bold">Login</h4>
-        <FormInput type="email" label="email" name="identifier" />
-        <FormInput type="password" label="password" name="password" />
+        <h4 className="text-center text-3xl font-bold">Ingresar</h4>
+        <FormInput type="email" label="Correo electrónico" name="email" />
+        <FormInput type="password" label="Contraseña" name="password" />
         <div className="mt-4">
-          <SubmitBtn text="login" />
+          <SubmitBtn text="Ingresar" />
         </div>
-        <button
-          type="button"
-          className="btn btn-secondary btn-block uppercase"
-          onClick={loginAsGuestUser}>
-          guest user
-        </button>
         <p className="text-center">
-          Not a member yet?{" "}
+          ¿Aún no tienes una cuenta?{" "}
           <Link
             to="/register"
             className="ml-2 link link-hover link-primary capitalize">
-            register
+            registrarse
           </Link>
         </p>
       </Form>

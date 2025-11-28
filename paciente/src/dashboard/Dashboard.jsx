@@ -76,7 +76,7 @@ function Dashboard() {
     gestionPacienteApiTest();
     historialOptometricoApiTest();
 
-  }, []); // 👈 solo al montar
+  }, []); 
 
 
   return (

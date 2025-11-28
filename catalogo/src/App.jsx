@@ -12,6 +12,7 @@ import {
   Products,
   Register,
   SingleProduct,
+  CrearProductos,
 } from "./pages";
 
 import { ErrorElement } from "./components";
@@ -80,6 +81,10 @@ const router = createBrowserRouter([
         path: "orders",
         element: <Orders />,
         loader: ordersLoader(store, queryClient),
+      },
+      {
+        path: "crearproducto",
+        element: <CrearProductos />,
       },
     ],
   },

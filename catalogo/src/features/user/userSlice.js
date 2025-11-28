@@ -28,14 +28,16 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     loginUser: (state, action) => {
-      const user = { ...action.payload.user, token: action.payload.jwt };
+      console.log("loginUser action payload:", action);
+      const user = { ...action.payload.usuario };
       state.user = user;
+      localStorage.setItem("token", user.token);
       localStorage.setItem("user", JSON.stringify(user));
     },
     logoutUser: (state) => {
       state.user = null;
       localStorage.removeItem("user");
-      toast.success("Logged out successfully");
+      toast.success("Salió exitosamente");
     },
     toggleTheme: (state) => {
       const { dracula, winter } = themes;
