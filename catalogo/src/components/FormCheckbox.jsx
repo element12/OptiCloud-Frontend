@@ -10,6 +10,7 @@ const FormCheckbox = ({ label, name, size, defaultValue }) => {
         type="checkbox"
         name={name}
         defaultValue={defaultValue}
+        value="true"
         className={`checkbox checkbox-primary mx-auto block ${size}`}
       />
     </div>

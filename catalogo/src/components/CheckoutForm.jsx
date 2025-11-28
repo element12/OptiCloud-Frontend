@@ -41,7 +41,7 @@ export const action =
       console.log(error);
       const errorMessage =
         error?.response?.data?.error?.message ||
-        "there was an error placing your order";
+        "hubo un error al realizar su pedido";
       toast.error(errorMessage);
       if (error?.response?.status === 401 || 403) return redirect("/login");
       return null;
@@ -52,10 +52,10 @@ const CheckoutForm = () => {
   return (
     <Form method="POST" className="flex flex-col gap-y-4">
       <h4 className="font-medium text-xl capitalize">Información de facturación</h4>
-      <FormInput label="first name" name="name" type="text" size="w-full" />
-      <FormInput label="address" name="address" type="text" size="w-full" />
+      <FormInput label="Nombre" name="name" type="text" size="w-full" />
+      <FormInput label="Dirección" name="address" type="text" size="w-full" />
       <div className="mt-4">
-        <SubmitBtn text="place your order" />
+        <SubmitBtn text="realizar pedido" />
       </div>
     </Form>
   );
