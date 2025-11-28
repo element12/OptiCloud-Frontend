@@ -25,7 +25,7 @@ function Header() {
                         <li><Link to="/" style={styles.link}>Inicio</Link></li>
                         <li><Link to="http://localhost:5174" style={styles.link}>Catálogo</Link></li>
                         <li><Link to="/optometrico" style={styles.link}>Optometría</Link></li>
-                        <li><Link to="/usuarios" style={styles.link}>Pacientes</Link></li>
+                        <li><Link to="/pacientes" style={styles.link}>Pacientes</Link></li>
                         <li>
                             <button onClick={handleLogout} style={styles.linkButton}>
                                 Cerrar sesión

@@ -3,6 +3,7 @@ import Login from "./auth/Login";
 import Register from "./auth/Register";
 import Dashboard from "./dashboard/Dashboard";
 import HistorialOpt from "./historial/historico";
+import Patients from "./pacientes/paciente";
 import HomeLayout from "./dashboard/HomeLayout";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -22,6 +23,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="optometrico" element={<HistorialOpt />} />
+            <Route path="pacientes" element={<Patients />} />
           </Route>
         </Route>
 
