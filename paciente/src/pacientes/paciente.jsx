@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import "../components/opticloud.css"; // ajusta la ruta si es necesario
-
+import {gestionPacienteApi} from "../api/ApiGlobal";
 // 🔧 API base (nuevo backend)
-const API_URL = "http://localhost:3004";
+const API_URL = "https://apigateway-opticloud.azure-api.net/gespaciente";
 
 /* ------------------ Modal reusable ------------------ */
 function Modal({ isOpen, onClose, title, children }) {
@@ -112,9 +112,10 @@ export default function OpticloudCrearPaciente() {
     try {
       setLoadingTable(true);
       setErrorTable(null);
-      const res = await fetch(`${API_URL}/api/v1/patients`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const res = await gestionPacienteApi.get("/api/v1/patients");
+      console.log("fetchPatients res:", res);
+      if (!res.status) throw new Error(`HTTP ${res.status}`);
+      const data = await res.data;
       setPatients(Array.isArray(data) ? data : [data]);
     } catch (err) {
       console.error("fetchPatients error:", err);
@@ -131,9 +132,9 @@ export default function OpticloudCrearPaciente() {
   /* ------------------ Fetch patient by id (for view or edit) ------------------ */
   async function fetchPatientById(id) {
   try {
-    const res = await fetch(`${API_URL}/api/v1/patients/${id}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const res = await gestionPacienteApi.get(`/api/v1/patients/${id}`);
+    if (!res.status) throw new Error(`HTTP ${res.status}`);
+    const data = await res.data;
     return data; // contiene { patient: {...}, exams: [...] }
   } catch (err) {
     console.error("fetchPatientById:", err);
@@ -148,8 +149,8 @@ export default function OpticloudCrearPaciente() {
     setLoadingExamsForPatient(true);
     setPatientExams([]);
 
-    const res = await fetch(`${API_URL}/api/v1/patients/${id}`);
-    if (!res.ok) {
+    const res = await gestionPacienteApi.get(`/api/v1/patients/${id}`);
+    if (!res.status) {
       if (res.status === 404) {
         setPatientExams([]);
         return;
@@ -157,7 +158,7 @@ export default function OpticloudCrearPaciente() {
       throw new Error(`HTTP ${res.status}`);
     }
 
-    const data = await res.json();
+    const data = await res.data;
 
     // ******* CORRECCIÓN AQUÍ ********
     const exams = Array.isArray(data.exams) ? data.exams : [];
@@ -360,29 +361,24 @@ async function openViewModal(patient) {
       setIsSaving(true);
       let res;
       if (isEditMode && selectedPatientId) {
+
+        console.log("Updating patient id:", selectedPatientId, "with payload:", payload);
         const putBody = {
-          id: selectedPatientId,   // <-- CORRECCIÓN
+          id: selectedPatientId,
           ...payload
         };
-    
-        res = await fetch(`${API_URL}/api/v1/patients/${selectedPatientId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(putBody),
-        });
-        if (!res.ok) {
+        
+        const res = await gestionPacienteApi.put(`/api/v1/patients/${selectedPatientId}`, putBody);
+        console.log("Update response:", res);
+        if (!res.status) {
           const txt = await res.text().catch(() => "");
           throw new Error(txt || `HTTP ${res.status}`);
         }
         pushToast("success", "Paciente actualizado correctamente.");
       } else {
         // POST create
-        res = await fetch(`${API_URL}/api/v1/patients`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) {
+        res = await gestionPacienteApi.post(`/api/v1/patients`, payload);
+        if (!res.status) {
           const txt = await res.text().catch(() => "");
           throw new Error(txt || `HTTP ${res.status}`);
         }
@@ -405,8 +401,8 @@ async function openViewModal(patient) {
     const ok = window.confirm(`¿Eliminar paciente "${patient.name}"? Esta acción no se puede deshacer.`);
     if (!ok) return;
     try {
-      const res = await fetch(`${API_URL}/api/v1/patients/${patient.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await gestionPacienteApi.delete(`/api/v1/patients/${patient.id}`);
+      if (!res.status) throw new Error(`HTTP ${res.status}`);
       pushToast("success", "Paciente eliminado.");
       await fetchPatients();
     } catch (err) {
