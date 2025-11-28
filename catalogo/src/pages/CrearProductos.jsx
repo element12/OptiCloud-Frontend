@@ -1,6 +1,6 @@
 // products.jsx
 import React, { useEffect, useState } from "react";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import "../components/opticloud-products.css";
 
 const API_URL = "https://apigateway-opticloud.azure-api.net/catalogo";
@@ -65,6 +65,10 @@ export default function ProductosManager() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [errorProducts, setErrorProducts] = useState(null);
 
+  // Modal de confirmación para eliminar
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, product: null });
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [form, setForm] = useState({
     nombre: "",
     descripcion: "",
@@ -77,6 +81,7 @@ export default function ProductosManager() {
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [sortOrder, setSortOrder] = useState("asc"); // 'asc' o 'desc'
 
   /* ------------------ Fetch products ------------------ */
   async function fetchProducts() {
@@ -89,7 +94,6 @@ export default function ProductosManager() {
 
       const data = await res.json();
 
-      // ✅ FIX: tu backend devuelve productos en data.data
       setProducts(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
       console.error("fetchProducts error:", err);
@@ -97,6 +101,74 @@ export default function ProductosManager() {
     } finally {
       setLoadingProducts(false);
     }
+  }
+
+  /* ------------------ Ordenar productos ------------------ */
+  function getSortedProducts() {
+    const sorted = [...products].sort((a, b) => {
+      if (sortOrder === "asc") {
+        return a.stock - b.stock;
+      } else {
+        return b.stock - a.stock;
+      }
+    });
+    return sorted;
+  }
+
+  function toggleSortOrder() {
+    setSortOrder(prev => prev === "asc" ? "desc" : "asc");
+  }
+
+  /* ------------------ Exportar a CSV ------------------ */
+  function exportToCSV() {
+    const sortedProducts = getSortedProducts();
+    
+    // Definir las columnas del CSV
+    const headers = [
+      "Nombre",
+      "Categoría",
+      "Precio",
+      "Stock",
+      "Activo",
+      "Fecha Creación",
+      "Fecha Actualización"
+    ];
+
+    // Crear las filas
+    const rows = sortedProducts.map(p => [
+      p.nombre,
+      p.categoria,
+      p.precio,
+      p.stock,
+      p.activo ? "Sí" : "No",
+      p.fechaCreacion ? new Date(p.fechaCreacion).toLocaleString() : "-",
+      p.fechaActualizacion ? new Date(p.fechaActualizacion).toLocaleString() : "-"
+    ]);
+
+    // Combinar headers y rows
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+
+    // Crear el blob y descargar
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `productos_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setToast({
+      id: Date.now(),
+      type: "success",
+      message: "Productos exportados correctamente."
+    });
   }
 
   useEffect(() => {
@@ -122,8 +194,6 @@ export default function ProductosManager() {
   /* ------------------ Edit modal ------------------ */
   function openEditModal(prod) {
     setIsEditMode(true);
-
-    // ✅ FIX: usar _id
     setEditingProductId(prod._id);
 
     setForm({
@@ -208,7 +278,6 @@ export default function ProductosManager() {
       if (isEditMode && editingProductId) {
         payload.fechaActualizacion = new Date().toISOString();
 
-        // ✅ FIX: PUT usa _id correcto
         res = await fetch(`${API_URL}/api/v1/products/${editingProductId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -247,14 +316,66 @@ export default function ProductosManager() {
     }
   }
 
-  /* ------------------ Render ------------------ */
+  /* ------------------ DELETE ------------------ */
+  function openDeleteModal(product) {
+    setDeleteModal({ isOpen: true, product });
+  }
+
+  function closeDeleteModal() {
+    if (isDeleting) return;
+    setDeleteModal({ isOpen: false, product: null });
+  }
+
+  async function handleDelete() {
+    if (!deleteModal.product || isDeleting) return;
+
+    try {
+      setIsDeleting(true);
+
+      const res = await fetch(`${API_URL}/api/v1/products/${deleteModal.product._id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      setToast({
+        id: Date.now(),
+        type: "success",
+        message: "Producto eliminado correctamente.",
+      });
+
+      closeDeleteModal();
+      fetchProducts();
+    } catch (err) {
+      console.error("delete error:", err);
+      setToast({
+        id: Date.now(),
+        type: "error",
+        message: "No se pudo eliminar el producto.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  /* ------------------ RENDER ------------------ */
+  const sortedProducts = getSortedProducts();
+
   return (
     <div className="oc-page">
       <header className="oc-header">
         <h1>Productos</h1>
-        <button className="oc-btn-primary" onClick={openCreateModal}>
-          Crear Producto
-        </button>
+        <div className="oc-header-actions">
+          <button className="oc-btn-secondary" onClick={toggleSortOrder} title="Ordenar por stock">
+            📊 Stock {sortOrder === "asc" ? "↑" : "↓"}
+          </button>
+          <button className="oc-btn-secondary" onClick={exportToCSV} disabled={products.length === 0}>
+            📥 Exportar CSV
+          </button>
+          <button className="oc-btn-primary" onClick={openCreateModal}>
+            Crear Producto
+          </button>
+        </div>
       </header>
 
       <p className="muted">Haz clic en "Crear Producto" para registrar uno nuevo.</p>
@@ -275,29 +396,42 @@ export default function ProductosManager() {
                 <th>Activo</th>
                 <th>Creado</th>
                 <th>Actualizado</th>
-                <th>Acción</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
-                // ✅ FIX: usar p._id
-                <tr key={p._id}>
+              {sortedProducts.map((p) => (
+                <tr
+                  key={p._id}
+                  className={p.stock < 10 ? "oc-row-low-stock" : ""}
+                >
                   <td>{p.nombre}</td>
                   <td>{p.categoria}</td>
                   <td>{Number(p.precio).toLocaleString()}</td>
-                  <td>{p.stock}</td>
+                  <td>
+                    {p.stock < 10 ? (
+                      <span className="oc-stock-alert">{p.stock}</span>
+                    ) : (
+                      <span className="oc-stock-normal">{p.stock}</span>
+                    )}
+                  </td>
                   <td>{p.activo ? "Sí" : "No"}</td>
                   <td>{p.fechaCreacion ? new Date(p.fechaCreacion).toLocaleString() : "-"}</td>
                   <td>{p.fechaActualizacion ? new Date(p.fechaActualizacion).toLocaleString() : "-"}</td>
                   <td>
-                    <button className="oc-btn-edit" onClick={() => openEditModal(p)}>
-                      <FaEdit /> Editar
-                    </button>
+                    <div className="oc-actions-cell">
+                      <button className="oc-btn-edit" onClick={() => openEditModal(p)}>
+                        <FaEdit /> Editar
+                      </button>
+                      <button className="oc-btn-delete" onClick={() => openDeleteModal(p)}>
+                        <FaTrash /> Eliminar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
 
-              {products.length === 0 && (
+              {sortedProducts.length === 0 && (
                 <tr>
                   <td colSpan={8} style={{ textAlign: "center", padding: 18 }}>
                     No hay productos registrados.
@@ -309,6 +443,7 @@ export default function ProductosManager() {
         </div>
       )}
 
+      {/* Modal de crear/editar */}
       <Modal
         isOpen={isOpen}
         onClose={handleClose}
@@ -417,6 +552,41 @@ export default function ProductosManager() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal de confirmación de eliminación */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        title="Confirmar Eliminación"
+      >
+        <div style={{ padding: "10px 0" }}>
+          <p style={{ marginBottom: 20, color: "#374151" }}>
+            ¿Estás seguro de que deseas eliminar el producto{" "}
+            <strong>{deleteModal.product?.nombre}</strong>?
+          </p>
+          <p style={{ marginBottom: 20, color: "#6b7280", fontSize: 14 }}>
+            Esta acción no se puede deshacer.
+          </p>
+          <div className="oc-actions">
+            <button
+              type="button"
+              className="oc-btn-secondary"
+              onClick={closeDeleteModal}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="oc-btn-danger"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
+        </div>
       </Modal>
 
       <div className="oc-toast-wrapper" aria-live="polite">
