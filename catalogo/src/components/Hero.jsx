@@ -14,9 +14,7 @@ const Hero = () => {
           Somos OptiCloud
         </h1>
         <p className="mt-8 max-w-xl text-lg leading-8">
-          Lorem ipsum, dolor sit amet consectetur adipisicing elit. Minima,
-          reprehenderit! Recusandae, reiciendis expedita voluptas at quod
-          consectetur cupiditate commodi earum!
+          Somos una tienda especializada en gafas y accesorios, donde encontrarás modelos modernos, cómodos y de alta calidad para proteger tu vista y complementar tu estilo. Ofrecemos variedad de diseños, precios accesibles y atención personalizada para que elijas las gafas ideales para ti.
         </p>
         <div className="mt-10">
           <Link to="/products" className="btn btn-primary">
