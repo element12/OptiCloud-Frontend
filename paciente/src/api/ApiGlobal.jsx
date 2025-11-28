@@ -1,9 +1,11 @@
 import axios from "axios";
 
+const apiurl = window.env?.VITE_API || import.meta.env.VITE_API;
+
 
 // Usuarios
 const usuariosApi = axios.create({
-  baseURL: window.env?.VITE_API_USER || import.meta.env.VITE_API_USER || "https://usuarios-api.azurewebsites.net",
+  baseURL: apiurl,
   headers: {
     "Content-Type": "application/json",
   },
@@ -35,7 +37,7 @@ usuariosApi.interceptors.response.use(
 // Catalogo 
 
 const catalogoInventarioApi = axios.create({
-  baseURL: window.env?.VITE_API_CATALOGO_INVENTARIO || import.meta.env.VITE_API_CATALOGO_INVENTARIO || "https://catalogo-inventario-ebhue0g4cwfyemg7.centralus-01.azurewebsites.net",
+  baseURL: apiurl + "/catalogo",
   headers: {
     "Content-Type": "application/json",
   },
@@ -67,7 +69,7 @@ catalogoInventarioApi.interceptors.response.use(
 
 
 const gestionPacienteApi = axios.create({
-  baseURL: window.env?.VITE_API_GESTION_PACIENTE || import.meta.env.VITE_API_GESTION_PACIENTE || "https://apigateway-opticloud.azure-api.net/gespaciente",
+  baseURL: apiurl + "/gespaciente",
   headers: {
     "Content-Type": "application/json",
   },
@@ -98,7 +100,7 @@ gestionPacienteApi.interceptors.response.use(
 // Historial Optometrico
 
 const historialOptometricoApi = axios.create({
-  baseURL: window.env?.VITE_API_HISTORIAL_OPTOMETRICO || import.meta.env.VITE_API_HISTORIAL_OPTOMETRICO || "https://apigateway-opticloud.azure-api.net/historialoptometrico",
+  baseURL: apiurl + "/historialoptometrico",
   headers: {
     "Content-Type": "application/json",
   },

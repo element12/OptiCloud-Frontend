@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import "../components/opticloud.css"; // ajústala si tu CSS está en otra ruta
-
+import {historialOptometricoApi} from "../api/ApiGlobal";
 // 🌍 VARIABLE GLOBAL DE API
 const API_URL = "https://apigateway-opticloud.azure-api.net/historialoptometrico";
 
@@ -96,9 +96,10 @@ export default function OpticloudCrearExamen() {
     try {
       setLoadingExams(true);
       setErrorExams(null);
-      const res = await fetch(`${API_URL}/optometrico/v1/exams`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const res = await historialOptometricoApi.get(`/optometrico/v1/exams`);
+      //const res = await fetch(`${API_URL}/optometrico/v1/exams`);
+      if (!res.status) throw new Error(`HTTP ${res.status}`);
+      const data = await res.data;
       setExams(Array.isArray(data) ? data : [data]);
     } catch (err) {
       console.error("fetchExams error:", err);
@@ -120,9 +121,9 @@ export default function OpticloudCrearExamen() {
       setPatientsLoading(true);
       setPatientsError(null);
       try {
-        const res = await fetch(`${API_URL}/optometrico/v1/patients`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const res = await historialOptometricoApi.get(`/optometrico/v1/patients`);
+        if (!res.status) throw new Error(`HTTP ${res.status}`);
+        const data = await res.data;
         if (mounted) setPatients(Array.isArray(data) ? data : [data]);
       } catch (err) {
         console.error("fetchPatients error:", err);
@@ -296,22 +297,14 @@ export default function OpticloudCrearExamen() {
         console.log("PUT payload:", payload);
 
         // PUT update
-        res = await fetch(`${API_URL}/optometrico/v1/exams/${editingExamId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        res = await historialOptometricoApi.put(`/optometrico/v1/exams/${editingExamId}`, payload);
       } else {
         // POST create (add exam_datetime automatically)
         payload.exam_datetime = new Date().toISOString();
-        res = await fetch(`${API_URL}/optometrico/v1/exams`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        res = await historialOptometricoApi.post(`/optometrico/v1/exams`, payload);
       }
 
-      if (!res.ok) {
+      if (!res.status) {
         const txt = await res.text().catch(() => "");
         throw new Error(txt || `HTTP ${res.status}`);
       }
