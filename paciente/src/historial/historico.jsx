@@ -3,7 +3,7 @@ import { FaEdit } from "react-icons/fa";
 import "../components/opticloud.css"; // ajústala si tu CSS está en otra ruta
 
 // 🌍 VARIABLE GLOBAL DE API
-const API_URL = "http://localhost:3003";
+const API_URL = "https://apigateway-opticloud.azure-api.net/historialoptometrico";
 
 /* ------------------ Modal reusable ------------------ */
 function Modal({ isOpen, onClose, title, children }) {

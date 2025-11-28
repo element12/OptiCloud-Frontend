@@ -98,7 +98,7 @@ gestionPacienteApi.interceptors.response.use(
 // Historial Optometrico
 
 const historialOptometricoApi = axios.create({
-  baseURL: window.env?.VITE_API_HISTORIAL_OPTOMETRICO || import.meta.env.VITE_API_HISTORIAL_OPTOMETRICO || "https://historialoptometrico.azurewebsites.net",
+  baseURL: window.env?.VITE_API_HISTORIAL_OPTOMETRICO || import.meta.env.VITE_API_HISTORIAL_OPTOMETRICO || "https://apigateway-opticloud.azure-api.net/historialoptometrico",
   headers: {
     "Content-Type": "application/json",
   },
