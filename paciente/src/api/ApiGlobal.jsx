@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const apiurl = window.env?.VITE_API || import.meta.env.VITE_API;
+const apiurl = window.env?.VITE_API || import.meta.env.VITE_API || "https://apigateway-opticloud.azure-api.net";
 
 
 // Usuarios
