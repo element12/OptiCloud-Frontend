@@ -61,7 +61,7 @@ const CartItem = ({ cartItem }) => {
         <button
           className="link link-hover link-primary text-sm mt-2"
           onClick={removeItemFromTheCart}>
-          remove
+          Remover
         </button>
       </div>
       {/* PRICE */}

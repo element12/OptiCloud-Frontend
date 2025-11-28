@@ -1,32 +1,35 @@
 import { Filters, ProductsContainer, PaginationContainer } from "../components";
 import { customFetch } from "../utils";
 
-const ulr = "catalogo/api/v1/products";
+const url = "catalogo/api/v1/products";
 
-const allProductsQuery = (queryParam) => {
-  const { categoria, nombre, precioMin, precioMax, activo, page } = queryParam;
+const allProductsQuery = (queryParams) => {
+  const { categoria, nombre, precioMin, precioMax, activo, page } = queryParams;
 
   return {
     queryKey: [
       "products",
       nombre ?? "",
-      categoria ?? "all",
+      categoria ?? "general",
       precioMin ?? 0,
-      precioMax ?? 100000,
+      precioMax ?? 10000000,
       activo ?? true,
       page ?? 1,
     ],
-    queryFn: () => customFetch(ulr, { queryParam }),
+    queryFn: () =>
+      customFetch(url, {
+        params: queryParams,  // ✅ AQUÍ ESTABA EL ERROR
+      }),
   };
 };
 
 export const loader =
   (queryClient) =>
   async ({ request }) => {
-    // const params = new URL(request.ulr).searchParams
-    const params = Object.fromEntries([
-      ...new URL(request.url).searchParams.entries(),
-    ]);
+
+    const params = Object.fromEntries(
+      new URL(request.url).searchParams.entries()
+    );
 
     const response = await queryClient.ensureQueryData(
       allProductsQuery(params)
@@ -34,9 +37,11 @@ export const loader =
 
     const products = response.data.data;
 
-    const categorias = Array.from(
-      new Set(products.map(p => p.categoria))
-    );
+    const categorias = [
+      "Todos",
+      ...Array.from(new Set(products.map((p) => p.categoria))),
+    ];
+
     const totalProductos = products.length;
     const meta = { categorias, totalProductos };
 
@@ -48,7 +53,7 @@ const Products = () => {
     <>
       <Filters />
       <ProductsContainer />
-     {/* // <PaginationContainer /> */}
+      {/* <PaginationContainer /> */}
     </>
   );
 };
