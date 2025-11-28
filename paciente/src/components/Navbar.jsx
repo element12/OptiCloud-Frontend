@@ -26,6 +26,7 @@ function Header() {
                         <li><Link to="https://catalagopticloud.azurewebsites.net" style={styles.link}>Catálogo</Link></li>
                         <li><Link to="/optometrico" style={styles.link}>Optometría</Link></li>
                         <li><Link to="/pacientes" style={styles.link}>Pacientes</Link></li>
+                        <li><Link to="/usuarios" style={styles.link}>Usuarios</Link></li>
                         <li>
                             <button onClick={handleLogout} style={styles.linkButton}>
                                 Cerrar sesión

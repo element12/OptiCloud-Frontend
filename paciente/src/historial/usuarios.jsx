@@ -78,10 +78,12 @@ export default function UsuariosManager() {
   // Modal para gestionar roles
   const [rolesModal, setRolesModal] = useState({ isOpen: false, user: null });
   const [availableRoles] = useState([
-    { id: 1, name: "admin" },
-    { id: 2, name: "usuario" },
-    { id: 3, name: "moderador" },
+    { id: 1, name: "Administrador" },
+    { id: 2, name: "Paciente" },
+    { id: 3, name: "Vendedor" },
+    { id: 4, name: "Optometrista" },
   ]);
+
 
   const [form, setForm] = useState({
     name: "",
@@ -406,10 +408,10 @@ export default function UsuariosManager() {
 
   async function handleAssignRole(rolId) {
     if (!rolesModal.user) return;
-
     try {
+      const userId = rolesModal.user.id;
       const payload = { rol: rolId };
-      await usuariosApi.post(`/users/admin/role/${rolesModal.user.id}`, payload);
+      await usuariosApi.post(`/users/admin/role/${userId}`, payload);
       console.log("✅ Rol asignado");
 
       setToast({
@@ -539,13 +541,13 @@ export default function UsuariosManager() {
                       >
                         <FaUserShield /> Roles
                       </button>
-                      <button
+                      {/* <button
                         className="oc-btn-delete"
                         onClick={() => openDeleteModal(u)}
                         title="Eliminar usuario"
                       >
                         <FaTrash /> Eliminar
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                 </tr>
