@@ -85,7 +85,6 @@ export default function OpticloudCrearPaciente() {
     neighborhood: "",
     gender: "",
     observations: "",
-    edit_reason: "", // sólo en edición
   });
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -131,41 +130,46 @@ export default function OpticloudCrearPaciente() {
 
   /* ------------------ Fetch patient by id (for view or edit) ------------------ */
   async function fetchPatientById(id) {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/patients/${id}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      return data;
-    } catch (err) {
-      console.error("fetchPatientById:", err);
-      throw err;
-    }
+  try {
+    const res = await fetch(`${API_URL}/api/v1/patients/${id}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data; // contiene { patient: {...}, exams: [...] }
+  } catch (err) {
+    console.error("fetchPatientById:", err);
+    throw err;
   }
+}
 
   /* ------------------ Fetch exams for patient (assumed route) ------------------ */
   // Asumido: GET /api/v1/patients/:id/exams
-  async function fetchExamsForPatient(id) {
-    try {
-      setLoadingExamsForPatient(true);
-      setPatientExams([]);
-      const res = await fetch(`${API_URL}/api/v1/patients/${id}`);
-      if (!res.ok) {
-        // si 404 u otro, retornar array vacío pero no romper
-        if (res.status === 404) {
-          setPatientExams([]);
-          return;
-        }
-        throw new Error(`HTTP ${res.status}`);
+ async function fetchExamsForPatient(id) {
+  try {
+    setLoadingExamsForPatient(true);
+    setPatientExams([]);
+
+    const res = await fetch(`${API_URL}/api/v1/patients/${id}`);
+    if (!res.ok) {
+      if (res.status === 404) {
+        setPatientExams([]);
+        return;
       }
-      const data = await res.json();
-      setPatientExams(Array.isArray(data) ? data : [data]);
-    } catch (err) {
-      console.error("fetchExamsForPatient error:", err);
-      setPatientExams([]);
-    } finally {
-      setLoadingExamsForPatient(false);
+      throw new Error(`HTTP ${res.status}`);
     }
+
+    const data = await res.json();
+
+    // ******* CORRECCIÓN AQUÍ ********
+    const exams = Array.isArray(data.exams) ? data.exams : [];
+
+    setPatientExams(exams);
+  } catch (err) {
+    console.error("fetchExamsForPatient error:", err);
+    setPatientExams([]);
+  } finally {
+    setLoadingExamsForPatient(false);
   }
+}
 
   /* ------------------ Open Create Modal ------------------ */
   function openCreateModal() {
@@ -184,71 +188,73 @@ export default function OpticloudCrearPaciente() {
       neighborhood: "",
       gender: "",
       observations: "",
-      edit_reason: "",
     });
     setErrors({});
     setIsOpen(true);
   }
 
   /* ------------------ Open Edit Modal ------------------ */
-  async function openEditModal(patient) {
-    // patient is an item from table
-    setIsEditMode(true);
-    setIsViewMode(false);
-    setEditingPatientId(patient.id);
-    setSelectedPatientId(String(patient.id));
-    setSelectedPatient(patient);
-    // fetch full by id to ensure latest fields
-    try {
-      const full = await fetchPatientById(patient.id);
-      setForm({
-        name: full.name ?? "",
-        document: full.document ?? "",
-        age: full.age ?? "",
-        birth_date: full.birth_date ? full.birth_date.substring(0, 10) : "",
-        address: full.address ?? "",
-        city: full.city ?? "",
-        neighborhood: full.neighborhood ?? "",
-        gender: full.gender ?? "",
-        observations: full.observations ?? "",
-        edit_reason: full.modification ?? "", // populate if backend stores it (but user must provide)
-      });
-    } catch (err) {
-      // fallback to table data
-      setForm({
-        name: patient.name ?? "",
-        document: patient.document ?? "",
-        age: patient.age ?? "",
-        birth_date: patient.birth_date ? patient.birth_date.substring(0, 10) : "",
-        address: patient.address ?? "",
-        city: patient.city ?? "",
-        neighborhood: patient.neighborhood ?? "",
-        gender: patient.gender ?? "",
-        observations: patient.observations ?? "",
-        edit_reason: "",
-      });
-    }
-    setErrors({});
-    setIsOpen(true);
+ async function openEditModal(patient) {
+  setIsEditMode(true);
+  setIsViewMode(false);
+  setEditingPatientId(patient.id);
+  setSelectedPatientId(String(patient.id));
+
+  try {
+    const full = await fetchPatientById(patient.id);
+
+    const p = full.patient ?? patient;
+
+    setForm({
+      name: p.name ?? "",
+      document: p.document ?? "",
+      age: p.age ?? "",
+      birth_date: p.birth_date ? p.birth_date.substring(0, 10) : "",
+      address: p.address ?? "",
+      city: p.city ?? "",
+      neighborhood: p.neighborhood ?? "",
+      gender: p.gender ?? "",
+      observations: p.observations ?? "",
+    });
+
+  } catch (err) {
+    console.error("openEditModal:", err);
+
+    // Fallback si la API falla
+    setForm({
+      name: patient.name ?? "",
+      document: patient.document ?? "",
+      age: patient.age ?? "",
+      birth_date: patient.birth_date ? patient.birth_date.substring(0, 10) : "",
+      address: patient.address ?? "",
+      city: patient.city ?? "",
+      neighborhood: patient.neighborhood ?? "",
+      gender: patient.gender ?? "",
+      observations: patient.observations ?? "",
+    });
   }
 
+  setIsOpen(true);
+}
+
   /* ------------------ Open View Modal (readonly) - shows patient + exams ------------------ */
-  async function openViewModal(patient) {
-    setIsEditMode(false);
-    setIsViewMode(true);
-    setEditingPatientId(null);
-    setSelectedPatientId(String(patient.id));
-    try {
-      const full = await fetchPatientById(patient.id);
-      setSelectedPatient(full);
-      // fetch exams
-      await fetchExamsForPatient(patient.id);
-    } catch (err) {
-      setSelectedPatient(patient);
-      setPatientExams([]);
-    }
-    setIsOpen(true);
+async function openViewModal(patient) {
+  setIsEditMode(false);
+  setIsViewMode(true);
+  setEditingPatientId(null);
+  setSelectedPatientId(String(patient.id));
+  try {
+    const full = await fetchPatientById(patient.id);
+    // <-- FIX: usar full.patient cuando la API devuelve { patient, exams }
+    setSelectedPatient(full.patient ?? full);
+    // fetch exams
+    await fetchExamsForPatient(patient.id);
+  } catch (err) {
+    setSelectedPatient(patient);
+    setPatientExams([]);
   }
+  setIsOpen(true);
+}
 
   /* ------------------ Close modal ------------------ */
   function handleClose() {
@@ -284,11 +290,12 @@ export default function OpticloudCrearPaciente() {
     if (!form.document || !String(form.document).trim()) errs.document = "Documento es obligatorio.";
     else if (String(form.document).trim().length < 3) errs.document = "Documento inválido.";
 
-    // age (optional)
-    if (form.age !== "" && form.age !== null && form.age !== undefined) {
-      const n = Number(form.age);
-      if (Number.isNaN(n) || !Number.isInteger(n) || n < 0 || n > 150) errs.age = "Edad inválida.";
-    }
+    // age (phone 10 digits)
+        if (!form.age || form.age.trim() === "") {
+          errs.age = "El teléfono es obligatorio.";
+        } else if (!/^\d{10}$/.test(form.age)) {
+          errs.age = "El teléfono debe tener exactamente 10 dígitos.";
+        }
 
     // birth_date (optional, not future)
     if (form.birth_date) {
@@ -305,7 +312,7 @@ export default function OpticloudCrearPaciente() {
     // texts length limits
     if (form.address && form.address.length > 250) errs.address = "Dirección demasiado larga.";
     if (form.city && form.city.length > 100) errs.city = "Ciudad demasiado larga.";
-    if (form.neighborhood && form.neighborhood.length > 100) errs.neighborhood = "Barrio demasiado largo.";
+    if (form.neighborhood) {const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;if (!emailRegex.test(form.neighborhood)) {errs.neighborhood = "Debe ingresar un correo electrónico válido.";}}
     if (form.observations && form.observations.length > 2000) errs.observations = "Observaciones demasiado largas.";
 
     // gender (optional basic check)
@@ -318,11 +325,6 @@ export default function OpticloudCrearPaciente() {
       }
     }
 
-    // edit_reason required ONLY in edit mode
-    if (isEditMode) {
-      if (!form.edit_reason || !String(form.edit_reason).trim()) errs.edit_reason = "Motivo de edición es obligatorio.";
-      else if (String(form.edit_reason).trim().length < 6) errs.edit_reason = "Motivo muy corto.";
-    }
 
     setErrors(errs);
     return errs;
@@ -356,8 +358,11 @@ export default function OpticloudCrearPaciente() {
       setIsSaving(true);
       let res;
       if (isEditMode && selectedPatientId) {
-        // PUT -> include modification
-        const putBody = { ...payload, modification: form.edit_reason?.trim() ?? "" };
+        const putBody = {
+          id: selectedPatientId,   // <-- CORRECCIÓN
+          ...payload
+        };
+    
         res = await fetch(`${API_URL}/api/v1/patients/${selectedPatientId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -442,10 +447,10 @@ export default function OpticloudCrearPaciente() {
               <tr>
                 <th>Documento</th>
                 <th>Nombre</th>
-                <th>Edad</th>
+                <th>Teléfono</th>
                 <th>Fecha Nac.</th>
                 <th>Ciudad</th>
-                <th>Barrio</th>
+                <th>Correo</th>
                 <th>Género</th>
                 <th>Acción</th>
               </tr>
@@ -521,11 +526,11 @@ export default function OpticloudCrearPaciente() {
                 <div style={{ display: "grid", gap: 8 }}>
                   <div><strong>Nombre:</strong> {selectedPatient.name}</div>
                   <div><strong>Documento:</strong> {selectedPatient.document}</div>
-                  <div><strong>Edad:</strong> {selectedPatient.age ?? ""}</div>
+                  <div><strong>Teléfono:</strong> {selectedPatient.age ?? ""}</div>
                   <div><strong>Fecha Nac.:</strong> {formatDateShort(selectedPatient.birth_date)}</div>
                   <div><strong>Dirección:</strong> {selectedPatient.address}</div>
                   <div><strong>Ciudad:</strong> {selectedPatient.city}</div>
-                  <div><strong>Barrio:</strong> {selectedPatient.neighborhood}</div>
+                  <div><strong>Correo:</strong> {selectedPatient.neighborhood}</div>
                   <div><strong>Género:</strong> {selectedPatient.gender}</div>
                   <div><strong>Observaciones:</strong> {selectedPatient.observations}</div>
                 </div>
@@ -605,18 +610,23 @@ export default function OpticloudCrearPaciente() {
 
             <div className="oc-row oc-separator">
               <div className="oc-col">
-                <label className="oc-label">Edad</label>
-                <input
-                  name="age"
-                  type="number"
-                  min="0"
-                  max="150"
-                  value={form.age}
-                  onChange={handleChange}
-                  className={`oc-input ${errors.age ? "oc-input-error" : ""}`}
-                />
-                {errors.age && <div className="oc-field-error">{errors.age}</div>}
-              </div>
+             <label className="oc-label">Teléfono</label>
+             <input
+               name="age"
+               type="text"
+               maxLength="10"
+               value={form.age}
+               onChange={(e) => {
+                 // solo números
+                 const val = e.target.value.replace(/\D/g, "");
+                 handleChange({ target: { name: "age", value: val } });
+               }}
+               className={`oc-input ${errors.age ? "oc-input-error" : ""}`}
+               placeholder="Teléfono (10 dígitos)"
+             />
+             {errors.age && <div className="oc-field-error">{errors.age}</div>}
+            </div>  
+
               <div className="oc-col">
                 <label className="oc-label">Fecha de nacimiento</label>
                 <input
@@ -655,16 +665,18 @@ export default function OpticloudCrearPaciente() {
             </div>
 
             <div className="oc-row oc-separator">
-              <div className="oc-col">
-                <label className="oc-label">Barrio</label>
-                <input
-                  name="neighborhood"
-                  value={form.neighborhood}
-                  onChange={handleChange}
-                  className={`oc-input ${errors.neighborhood ? "oc-input-error" : ""}`}
-                />
-                {errors.neighborhood && <div className="oc-field-error">{errors.neighborhood}</div>}
-              </div>
+             <div className="oc-col">
+             <label className="oc-label">Correo</label>
+             <input
+               name="neighborhood"
+               type="email"
+               value={form.neighborhood}
+               onChange={handleChange}
+               className={`oc-input ${errors.neighborhood ? "oc-input-error" : ""}`}
+               placeholder="correo@example.com"
+             />
+             {errors.neighborhood && <div className="oc-field-error">{errors.neighborhood}</div>}
+                </div>
 
               <div className="oc-col">
                 <label className="oc-label">Género</label>
