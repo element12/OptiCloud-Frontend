@@ -23,11 +23,11 @@ const Cart = () => {
           <CartTotals />
           {user ? (
             <Link to="/checkout" className="btn btn-primary btn-block mt-8">
-              Proceed to checkout
+              Proceder al Pago
             </Link>
           ) : (
             <Link to="/login" className="btn btn-primary btn-block mt-8">
-              Please login
+              Por favor inicie sesión
             </Link>
           )}
         </div>
