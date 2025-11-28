@@ -37,6 +37,7 @@ const userSlice = createSlice({
     logoutUser: (state) => {
       state.user = null;
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
       toast.success("Salió exitosamente");
     },
     toggleTheme: (state) => {
