@@ -2,8 +2,7 @@ import { FeaturedProducts } from "../components";
 import Hero from "../components/Hero";
 import { customFetch } from "../utils";
 
-//const url = "/products?featured=true";
-const url = "/products";
+const url = "catalogo/api/v1/products";
 const featuredProductsQuery = {
   queryKey: ["featuredProducts"],
   queryFn: () => customFetch(url),

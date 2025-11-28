@@ -1,7 +1,7 @@
 import { Filters, ProductsContainer, PaginationContainer } from "../components";
 import { customFetch } from "../utils";
 
-const ulr = "/products";
+const ulr = "catalogo/api/v1/products";
 
 const allProductsQuery = (queryParam) => {
   const { categoria, nombre, precioMin, precioMax, activo, page } = queryParam;
