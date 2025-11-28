@@ -67,7 +67,7 @@ catalogoInventarioApi.interceptors.response.use(
 
 
 const gestionPacienteApi = axios.create({
-  baseURL: window.env?.VITE_API_GESTION_PACIENTE || import.meta.env.VITE_API_GESTION_PACIENTE || "https://gestionpacienteopticloud.azurewebsites.net",
+  baseURL: window.env?.VITE_API_GESTION_PACIENTE || import.meta.env.VITE_API_GESTION_PACIENTE || "https://apigateway-opticloud.azure-api.net/gespaciente",
   headers: {
     "Content-Type": "application/json",
   },

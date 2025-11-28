@@ -3,7 +3,7 @@ import { FaEdit } from "react-icons/fa";
 import "../components/opticloud.css"; // ajusta la ruta si es necesario
 
 // 🔧 API base (nuevo backend)
-const API_URL = "http://localhost:3004";
+const API_URL = "https://apigateway-opticloud.azure-api.net/gespaciente";
 
 /* ------------------ Modal reusable ------------------ */
 function Modal({ isOpen, onClose, title, children }) {
