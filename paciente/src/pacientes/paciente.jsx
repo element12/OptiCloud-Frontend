@@ -231,6 +231,8 @@ export default function OpticloudCrearPaciente() {
       neighborhood: patient.neighborhood ?? "",
       gender: patient.gender ?? "",
       observations: patient.observations ?? "",
+
+      
     });
   }
 
