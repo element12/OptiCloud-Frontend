@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const developmentUrl = "https://apigateway-opticloud.azure-api.net";
+const developmentUrl = window.env?.VITE_API || import.meta.env.VITE_API;
 //const developmentUrl = "/api";
 export const customFetch = axios.create({
   baseURL: developmentUrl,
